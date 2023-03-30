@@ -12,6 +12,7 @@ jobs:
     outputs:
       APP_IS_NEW: ${{ steps.check-app-updated-on-sl.outputs.APP_IS_NEW }}
       NEW_APP_NAME: ${{ steps.check-app-updated-on-sl.outputs.NEW_APP_NAME }}
+      NEW_APP_NAME_iOS: ${{ steps.check-app-updated-on-sl-iOS.outputs.NEW_APP_NAME_iOS }}
     steps:
       - name: checkout-test-harness
         uses: actions/checkout@v2
@@ -24,6 +25,15 @@ jobs:
           echo ${output[1]}
           echo "::set-output name=APP_IS_NEW::${output[0]}"
           echo "::set-output name=NEW_APP_NAME::${output[1]}"
+      - name: check-app-updated-on-sl-iOS
+        id: check-app-updated-on-sl-iOS
+        run: |
+          output=($(python .github/workflows/bc_wallet/get_sl_apps_uploaded.py ${{ secrets.SAUCE_USERNAME }} ${{ secrets.SAUCE_ACCESS_KEY }} iOS us-west-1 .github/workflows/bc_wallet/latest_app.json ))
+          echo ${output[@]}
+          echo ${output[0]}
+          echo ${output[1]}
+          echo "::set-output name=APP_IS_NEW::${output[0]}"
+          echo "::set-output name=NEW_APP_NAME_iOS::${output[1]}"
   run-on-device-tests:
     needs: [check-app-updated]
     #needs: [check-app-updated-ios, check-app-updated-android]
@@ -38,19 +48,19 @@ jobs:
             app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.aab"
             report-project: "android-multi-device-full"
           - mobile-platform: "-p iOS"
-            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.ipa"
+            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME_iOS }}.ipa"
             report-project: "ios-multi-device-full"
           - mobile-platform: "-p Android"
             app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.aab"
             report-project: "candy-uvp-pcft-chat-android"
           - mobile-platform: "-p iOS"
-            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.ipa"
+            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME_iOS }}.ipa"
             report-project: "candy-uvp-pcft-chat-ios"
           - mobile-platform: "-p Android"
             app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.aab"
             report-project: "bc-digital-id-android"
           - mobile-platform: "-p iOS"
-            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME }}.ipa"
+            app-file-name: "-a ${{ needs.check-app-updated.outputs.NEW_APP_NAME_iOS }}.ipa"
             report-project: "bc-digital-id-ios"
     #timeout-minutes: 60
     steps:
