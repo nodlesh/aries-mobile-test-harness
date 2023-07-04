@@ -370,8 +370,18 @@ def step_impl(context):
 
 
 @given('the Holder has setup thier Wallet')
-def step_impl(context):
-    context.execute_steps(f'''
+@given('the {user} has setup thier Wallet')
+def step_impl(context, user=None):
+
+    if user:
+        context.execute_steps(f'''
+            Given the {user} has skipped on-boarding
+            And the {user} has accepted the Terms and Conditions
+            And a  PIN has been set up with "369369" by the {user}
+        ''')
+        
+    else:
+        context.execute_steps(f'''
             Given the User has skipped on-boarding
             And the User has accepted the Terms and Conditions
             And a PIN has been set up with "369369"

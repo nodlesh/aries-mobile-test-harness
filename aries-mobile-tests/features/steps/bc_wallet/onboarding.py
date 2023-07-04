@@ -7,7 +7,7 @@ from behave import given, when, then
 import json
 
 # Local Imports
-from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
+from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected, set_current_page_object_context
 from agent_test_utils import get_qr_code_from_invitation
 # import Page Objects needed
 from pageobjects.bc_wallet.onboardingwelcome import OnboardingWelcomePage
@@ -18,17 +18,26 @@ from pageobjects.bc_wallet.termsandconditions import TermsAndConditionsPage
 
 
 @given('the new user has opened the app for the first time')
-def step_impl(context):
+@given('the new {user} has opened the app for the first time')
+def step_impl(context, user=None):
     # App opened already buy appium. 
     # Intialize the page we should be on
-    context.thisOnboardingWelcomePage = OnboardingWelcomePage(context.driver)
+
+    # If user is passed use the string to get the proper driver from the context.multi_device_service_handlers[]
+    if user:
+        context.multi_device_page_objects[user].thisOnboardingWelcomePage = OnboardingWelcomePage(context.multi_device_service_handlers[user]._driver)
+    else:
+        context.thisOnboardingWelcomePage = OnboardingWelcomePage(context.driver)
     
 
 @given('the user is on the onboarding Welcome screen')
-def step_impl(context):
-    assert context.thisOnboardingWelcomePage.on_this_page()
+@given('the {user} is on the onboarding Welcome screen')
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    assert currentPageObjectContext.thisOnboardingWelcomePage.on_this_page()
     # set a current onboarding page so the select Next step can be reused across these pages
-    context.currentOnboardingPage = context.thisOnboardingWelcomePage
+    currentPageObjectContext.currentOnboardingPage = currentPageObjectContext.thisOnboardingWelcomePage
     
 
 @when('the user selects Next')
@@ -69,8 +78,11 @@ def step_impl(context):
 
 
 @then('are brought to the Terms and Conditions screen')
-def step_impl(context):
-    assert context.thisTermsAndConditionsPage.on_this_page()
+@then('the {user} is brought to the Terms and Conditions screen')
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    assert currentPageObjectContext.thisTermsAndConditionsPage.on_this_page()
 
 @given('the user is on the "{screen}"')
 @given('the user is on the onboarding {screen}')
@@ -114,8 +126,10 @@ def step_impl(context, screen):
 
 
 @when('the user selects Skip')
-def step_impl(context):
-    context.thisTermsAndConditionsPage = context.currentOnboardingPage.select_skip()
+@when('the {user} selects Skip')
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    currentPageObjectContext.thisTermsAndConditionsPage = currentPageObjectContext.currentOnboardingPage.select_skip()
 
 
 @when('the user selects Back')

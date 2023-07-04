@@ -8,7 +8,7 @@ import json
 import os
 
 # Local Imports
-from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
+from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected, set_current_page_object_context
 from agent_test_utils import get_qr_code_from_invitation
 # import Page Objects needed
 from pageobjects.bc_wallet.termsandconditions import TermsAndConditionsPage
@@ -21,18 +21,29 @@ from pageobjects.bc_wallet.pin import PINPage
 
 
 @given('the User has accepted the Terms and Conditions')
-def step_impl(context):
-    context.execute_steps(f'''
-        Given the User is on the Terms and Conditions screen
-        And the users accepts the Terms and Conditions
-        And the user clicks continue
-    ''')
+@given('the {user} has accepted the Terms and Conditions')
+def step_impl(context, user=None):
+    if user:
+        context.execute_steps(f'''
+            Given the {user} is on the Terms and Conditions screen
+            And the {user} accepts the Terms and Conditions
+            And the {user} clicks continue
+        ''')
+    else:
+        context.execute_steps(f'''
+            Given the User is on the Terms and Conditions screen
+            And the users accepts the Terms and Conditions
+            And the user clicks continue
+        ''')
 
 
 @when('the User enters the first PIN as {pin}')
 @when('the User enters the first PIN as "{pin}"')
-def step_impl(context, pin):
-    context.thisPINSetupPage.enter_pin(pin)
+@when('the {user} enters the first PIN as "{pin}"')
+def step_impl(context, pin, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisPINSetupPage.enter_pin(pin)
     # TODO remove comment here when Test IDs are on the visibility toggle
     #assert pin == context.thisPINSetupPage.get_pin()
 
@@ -40,17 +51,23 @@ def step_impl(context, pin):
 @when('the User re-enters the PIN as {pin}')
 @then('the User re-enters the PIN as "{pin}"')
 @when('the User re-enters the PIN as "{pin}"')
-def step_impl(context, pin):
-    context.thisPINSetupPage.enter_second_pin(pin)
+@when('the {user} re-enters the PIN as "{pin}"')
+def step_impl(context, pin, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisPINSetupPage.enter_second_pin(pin)
     # TODO remove comment here when Test IDs are on the visibility toggle
     #assert pin == context.thisPINSetupPage.get_second_pin()
 
 
 @then('the User selects Create PIN')
 @when('the User selects Create PIN')
-def step_impl(context):
-    context.thisOnboardingBiometricsPage = context.thisPINSetupPage.create_pin()
-    context.thisOnboardingBiometricsPage.on_this_page()
+@when('the {user} selects Create PIN')
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisOnboardingBiometricsPage = currentPageObjectContext.thisPINSetupPage.create_pin()
+    currentPageObjectContext.thisOnboardingBiometricsPage.on_this_page()
 
 
 @when('the User selects to use Biometrics')
@@ -58,6 +75,10 @@ def step_impl(context):
     assert context.thisOnboardingBiometricsPage.select_biometrics()
     context.thisInitializationPage = context.thisOnboardingBiometricsPage.select_continue()
     context.device_service_handler.biometrics_authenticate(True)
+
+@when('the User selects not to use Biometrics')
+def step_impl(context):
+    context.thisInitializationPage = context.thisOnboardingBiometricsPage.select_continue()
 
 @then('they have access to the app')
 def step_impl(context):
@@ -110,6 +131,13 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps('''
         When the User selects to use Biometrics
+        Then they land on the Home screen
+    ''')
+
+@given('the Holder has selected not to use biometrics to unlock BC Wallet')
+def step_impl(context):
+    context.execute_steps('''
+        When the User selects not to use Biometrics
         Then they land on the Home screen
     ''')
 

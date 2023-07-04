@@ -174,3 +174,9 @@ def table_to_str(table):
             result += cell + '|'
         result += '\n'
     return result
+
+def set_current_page_object_context(context, user=None):
+    if user:
+        return context.multi_device_page_objects[user]
+    else:
+        return context
