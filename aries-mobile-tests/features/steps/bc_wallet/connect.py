@@ -18,21 +18,22 @@ from pageobjects.bc_wallet.home import HomePage
 from pageobjects.bc_wallet.camera_privacy_policy import CameraPrivacyPolicyPage
 
 @given('a PIN has been set up with "{pin}"')
-def step_impl(context, pin):
-    # context.execute_steps(f'''
-    #     Given the User is on the PIN creation screen
-    #     When the User enters the first PIN as "{pin}"
-    #     And the User re-enters the PIN as "{pin}"
-    #     And the User selects Create PIN
-    #     And the User selects to use Biometrics
-    #     Then the User has successfully created a PIN
-    # ''')
-    context.execute_steps(f'''
-        Given the User is on the PIN creation screen
-        When the User enters the first PIN as "{pin}"
-        And the User re-enters the PIN as "{pin}"
-        And the User selects Create PIN
-    ''')
+@given('a PIN has been set up with "{pin}" by the {user}')
+def step_impl(context, pin, user=None):
+    if user:
+        context.execute_steps(f'''
+            Given the {user} is on the PIN creation screen
+            When the {user} enters the first PIN as "{pin}"
+            And the {user} re-enters the PIN as "{pin}"
+            And the {user} selects Create PIN
+        ''')
+    else:
+        context.execute_steps(f'''
+            Given the User is on the PIN creation screen
+            When the User enters the first PIN as "{pin}"
+            And the User re-enters the PIN as "{pin}"
+            And the User selects Create PIN
+        ''')
 
 @when('the Holder scans the QR code sent by the "{agent}"')
 def step_impl(context, agent):
@@ -74,7 +75,7 @@ def step_impl(context):
 
 @given('the Connecting completes successfully')
 @when('the Connecting completes successfully')
-def step_impl(context):
+def step_impl(context, user=None):
     # The connecting screen is temporary, loop until it goes away and return home.
     # if context.connecting_is_done == False:
     #     timeout=20

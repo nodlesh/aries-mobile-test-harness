@@ -9,7 +9,7 @@ from time import sleep
 
 # Local Imports
 from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
-from agent_test_utils import get_qr_code_from_invitation
+from agent_test_utils import get_qr_code_from_invitation, set_current_page_object_context
 # import Page Objects needed
 #from pageobjects.bc_wallet.credential_offer_notification import CredentialOfferNotificationPage
 from pageobjects.bc_wallet.credential_offer import CredentialOfferPage
@@ -36,11 +36,11 @@ def step_impl(context):
     # assert context.thisCredentialOfferNotificationPage.on_this_page()
 
 
-
+@given('the {user} receives a credential offer of {credential}')
 @given('the Holder receives a credential offer of {credential}')
 @when('the Holder receives a credential offer of {credential}')
 @when('the Holder receives a credential offer of {credential} with revocable set as {revocation}') 
-def step_impl(context, credential, revocation=None):
+def step_impl(context, credential, revocation=None, user=None):
     # Open cred data file
     try:
         credential_json_file = open(
@@ -78,11 +78,14 @@ def step_impl(context, credential, revocation=None):
                 print(
                     f"FileNotFoundError: features/data/schema_{cred_type.lower()}.json")
         else:
-            if "Connectionless" in context.tags:
-                # We are expecting a QR code on the send credential if connectionless
+            if "Connectionless" in context.tags or context.issuer.get_issuer_type() == "CANdyUVPIssuer":
+                # We are expecting a QR code on the send credential if connectionless or the issuer is a CANdyUVPIssuer
                 qrimage = context.issuer.send_credential(
                     credential_offer=credential_json)
-                context.device_service_handler.inject_qrcode(qrimage)
+                if user:
+                    context.multi_device_service_handlers[user].inject_qrcode(qrimage)
+                else:
+                    context.device_service_handler.inject_qrcode(qrimage)
             else:
                 context.issuer.send_credential(
                     credential_offer=credential_json)
@@ -98,17 +101,23 @@ def step_impl(context):
     #context.thisCredentialOfferPage = context.thisCredentialOfferNotificationPage.select_credential()
 
 
+@then('the {user} is brought to the credential offer screen')
 @then('holder is brought to the credential offer screen')
-def step_impl(context):
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    if user:
+        driver = context.multi_device_service_handlers[user]._driver
+    else:
+        driver = context.driver
+
     # Workaround for bug 645
+    # TODO remove this when bug 645 is fixed. It looks like there is no reason to run this anymore July 7, 2023
     context.execute_steps(f'''
         When the connection takes too long reopen app and select notification
     ''')
 
-    #assert context.thisConnectingPage.wait_for_connection()
-
-    context.thisCredentialOfferPage = CredentialOfferPage(context.driver)
-    assert context.thisCredentialOfferPage.on_this_page()
+    currentPageObjectContext.thisCredentialOfferPage = CredentialOfferPage(driver)
+    assert currentPageObjectContext.thisCredentialOfferPage.on_this_page()
 
 
 @when('the connection takes too long reopen app and select notification')
@@ -166,10 +175,13 @@ def step_impl(context, credential, revocation=None):
         ''')
 
 
+@when('the {user} selects Accept')
 @then('they select Accept')
 @when('they select Accept')
-def step_impl(context):
-    context.thisCredentialOnTheWayPage = context.thisCredentialOfferPage.select_accept(
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisCredentialOnTheWayPage = currentPageObjectContext.thisCredentialOfferPage.select_accept(
         scroll=True)
 
 @given('the holder declines the credential offer')
@@ -178,48 +190,68 @@ def step_impl(context):
         scroll=True)
     context.thisHomePage = context.thisDeclineCredentialOffer.select_decline()
 
+@when('the {user} is informed that their credential is on the way with an indication of loading')
 @then('the holder is informed that their credential is on the way with an indication of loading')
 @when('the holder is informed that their credential is on the way with an indication of loading')
-def step_impl(context):
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
     # sometimes the workflow is farther ahead than the test thinks it is, so put in a soft assert here.
-    if context.thisCredentialOnTheWayPage.on_this_page():
+    if currentPageObjectContext.thisCredentialOnTheWayPage.on_this_page():
         assert True
     else:
         pass
 
 
+@when('once the credential arrives the {user} is informed that the Credential is added to your wallet')
 @then('once the credential arrives they are informed that the Credential is added to your wallet')
 @when('once the credential arrives they are informed that the Credential is added to your wallet')
-def step_impl(context):
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
     try:
-        context.thisCredentialAddedPage = context.thisCredentialOnTheWayPage.wait_for_credential()
-        assert context.thisCredentialAddedPage.on_this_page()
+        currentPageObjectContext.thisCredentialAddedPage = currentPageObjectContext.thisCredentialOnTheWayPage.wait_for_credential()
+        assert currentPageObjectContext.thisCredentialAddedPage.on_this_page()
     except:
-        context.thisHomePage = context.thisCredentialOnTheWayPage.select_home()
+        currentPageObjectContext.thisHomePage = currentPageObjectContext.thisCredentialOnTheWayPage.select_home()
 
 
+@when('the {user} selects Done')
 @then('they select Done')
 @when('they select Done')
-def step_impl(context):
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    if user:
+        driver = context.multi_device_service_handlers[user]._driver
+    else:
+        driver = context.driver
+
     # TODO we could be on the home page at this point. Should we fail the last step, fail this one, or try the cred accept again?
-    if hasattr(context, 'thisCredentialsPage') == False:
+    if hasattr(currentPageObjectContext, 'thisCredentialsPage') == False:
         # This means we probably went to the Home Page above. Revisit this if the this happens too much.
-        context.thisCredentialAddedPage = CredentialAddedPage(context.driver)
-    context.thisCredentialsPage = context.thisCredentialAddedPage.select_done()
+        currentPageObjectContext.thisCredentialAddedPage = CredentialAddedPage(driver)
+    currentPageObjectContext.thisCredentialsPage = currentPageObjectContext.thisCredentialAddedPage.select_done()
 
 
+@then(u'the {user} is brought to the list of credentials')
 @then(u'they are brought to the list of credentials')
-def step_impl(context):
-    context.thisCredentialsPage.on_this_page()
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    currentPageObjectContext.thisCredentialsPage.on_this_page()
 
 
+@then(u'the credential accepted is at the top of the list for the {user}')
 @then(u'the credential {credential_name} is accepted is at the top of the list')
 @then(u'the IDIM Person credential accepted is at the top of the list')
 @then(u'the credential accepted is at the top of the list')
-def step_impl(context, credential_name=None):
+def step_impl(context, credential_name=None, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    if user:
+        driver = context.multi_device_service_handlers[user]._driver
+    else:
+        driver = context.driver
+        
     # if the platform is iOS 15+ or android 
-    if (context.driver.capabilities['platformName'] and context.driver.capabilities['platformVersion'] >= '15') or context.driver.capabilities['platformName'] == "Android":
-        json_elems = context.thisCredentialsPage.get_credentials()
+    if (driver.capabilities['platformName'] and driver.capabilities['platformVersion'] >= '15') or driver.capabilities['platformName'] == "Android":
+        json_elems = currentPageObjectContext.thisCredentialsPage.get_credentials()
         if credential_name == None:
             credential_name = get_expected_credential_name(context)
 
@@ -227,7 +259,7 @@ def step_impl(context, credential_name=None):
     else:
         if credential_name == None:
             credential_name = get_expected_credential_name(context)
-        assert context.thisCredentialsPage.credential_exists(credential_name)
+        assert currentPageObjectContext.thisCredentialsPage.credential_exists(credential_name)
 
 
 def get_expected_credential_name(context):

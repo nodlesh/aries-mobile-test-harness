@@ -16,6 +16,7 @@ class DeveloperSettingsPage(BasePage):
     production_locator = (AppiumBy.ID, "com.ariesbifold:id/production")
     development_locator = (AppiumBy.ID, "com.ariesbifold:id/development")
     test_locator = (AppiumBy.ID, "com.ariesbifold:id/test")
+    use_verifier_capability_locator = (AppiumBy.ID, "com.ariesbifold:id/UseVerifierCapability")
 
     def on_this_page(self):     
         return super().on_this_page(self.on_this_page_text_locator) 
@@ -41,4 +42,8 @@ class DeveloperSettingsPage(BasePage):
         else:
             raise Exception(f"App not on the {type(self)} page")
 
-
+    def select_use_verifier_capability(self):
+        if self.on_this_page():
+            self.find_by(self.use_verifier_capability_locator).click()
+        else:
+            raise Exception(f"App not on the {type(self)} page")

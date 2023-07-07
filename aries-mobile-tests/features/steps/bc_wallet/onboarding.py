@@ -7,8 +7,8 @@ from behave import given, when, then
 import json
 
 # Local Imports
-from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected, set_current_page_object_context
-from agent_test_utils import get_qr_code_from_invitation
+from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
+from agent_test_utils import get_qr_code_from_invitation, set_current_page_object_context
 # import Page Objects needed
 from pageobjects.bc_wallet.onboardingwelcome import OnboardingWelcomePage
 from pageobjects.bc_wallet.onboardingstorecredssecurely import OnboardingStoreCredsSecurelyPage
@@ -17,8 +17,8 @@ from pageobjects.bc_wallet.onboardingsharenecessary import OnboardingShareNecess
 from pageobjects.bc_wallet.termsandconditions import TermsAndConditionsPage
 
 
-@given('the new user has opened the app for the first time')
 @given('the new {user} has opened the app for the first time')
+@given('the new user has opened the app for the first time')
 def step_impl(context, user=None):
     # App opened already buy appium. 
     # Intialize the page we should be on
@@ -30,8 +30,8 @@ def step_impl(context, user=None):
         context.thisOnboardingWelcomePage = OnboardingWelcomePage(context.driver)
     
 
-@given('the user is on the onboarding Welcome screen')
 @given('the {user} is on the onboarding Welcome screen')
+@given('the user is on the onboarding Welcome screen')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
@@ -125,8 +125,8 @@ def step_impl(context, screen):
         raise Exception(f"Unexpected screen, {screen}")
 
 
-@when('the user selects Skip')
 @when('the {user} selects Skip')
+@when('the user selects Skip')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
     currentPageObjectContext.thisTermsAndConditionsPage = currentPageObjectContext.currentOnboardingPage.select_skip()

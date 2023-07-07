@@ -3,16 +3,18 @@
 #
 # -----------------------------------------------------------
 
+import logging
 from behave import given, when, then
 import os, json
 from decouple import config
 #from behave import step
 from behave.api.async_step import async_run_until_complete
 import threading
+from types import SimpleNamespace
 
 # Local Imports
 from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
-from agent_test_utils import get_qr_code_from_invitation, table_to_str, create_non_revoke_interval
+from agent_test_utils import get_qr_code_from_invitation, table_to_str, create_non_revoke_interval, NestedAttributeDict, set_current_page_object_context
 from device_service_handler.device_service_handler_factory import DeviceServiceHandlerFactory
 
 
@@ -215,6 +217,12 @@ def step_impl(context, n):
     holder_thread = threading.Thread(target=setup_holder, args=(context,))
     verifier_thread = threading.Thread(target=setup_verifier, args=(context,))
 
+    # Create a dictionary that will be indexed on role and give the page object apropriate for the device set
+    # Create an instance of the custom dictionary
+    custom_page_object_dict = NestedAttributeDict()
+    # Assign the custom dictionary to the context object
+    context.multi_device_page_objects = custom_page_object_dict
+
     for row in context.table:
         if row["role"] == "holder":
             if row["device"] == "default" and row["device_handler"] == "existing":
@@ -236,7 +244,7 @@ def step_impl(context, n):
 
         else:
             role = row["role"]
-            print(
+            logging.ERROR(
                 f"Data table in step contains an unrecognized role '{role}', must be holder or verifier"
             )
     holder_thread.join()
@@ -246,10 +254,10 @@ def step_impl(context, n):
 def setup_holder(context):
     context.multi_device_service_handlers["holder"] = context.device_service_handler
 
-    context.driver = context.multi_device_service_handlers["holder"]._driver
+    context.multi_device_page_objects['holder'] = SimpleNamespace()
     context.execute_steps(f'''
-        Given the Holder has setup thier wallet
-        And the Holder has selected not to use biometrics to unlock BC Wallet
+        Given the {"holder"} has setup thier wallet
+        And the {"holder"} has selected not to use biometrics to unlock BC Wallet
     ''')
 
 def setup_verifier(context):
@@ -277,23 +285,67 @@ def setup_verifier(context):
     print("\nActual Capabilities used by Appium:")
     print(json.dumps(context.multi_device_service_handlers["verifier"]._driver.capabilities,indent=4))
 
-    context.driver = context.multi_device_service_handlers["verifier"]._driver
+    context.multi_device_page_objects['verifier'] = SimpleNamespace()
+
     context.execute_steps(f'''
-        Given the Holder has setup thier wallet
-        And the Holder has selected not to use biometrics to unlock BC Wallet
+        Given the {"verifier"} has setup thier wallet
+        And the {"verifier"} has selected not to use biometrics to unlock BC Wallet
     ''')
 
 
+@given('the {user} has credentials')
+def step_the_user_has_a_credential(context, user):
+    for row in context.table:
+        if row["credential_name"] == "Unverified Person":
+            credential = row["credential_name"]
+            context.execute_steps(f'''
+                Given the {user} has an Unverified Person {credential}"
+            ''')
+        else:
+            # pass for POC
+            # TODO call the old Holder has credentials step
+            pass
 
-@given('the verifier wants to prove that the holder {proof}')
-def step_given_verifier_proof(context, proof):
+@given('the {user} wants to prove that the holder {proof_name}')
+def step_given_verifier_proof(context, proof_name, user):
     # Code to set the proof information for the verifier
-    pass
+    context.execute_steps(f'''
+        Given the {user} has user Verifier capability turned on in dev options
+        And the {user} has selected to use the {proof_name} proof
+    ''')
 
-@when('the holder scans the QR Code from the Verifier')
-def step_when_holder_scans_QR_code(context):
-    # Code for the holder to scan the QR Code
-    pass
+@given('the {user} has user Verifier capability turned on in dev options')
+def step_turn_on_verifier_capability(context, proof_name, user):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisSettingsPage = currentPageObjectContext.thisHomePage.select_settings()
+    currentPageObjectContext.thisSettingsPage.enable_developer_mode()
+    currentPageObjectContext.thisDeveloperSettingsPage = currentPageObjectContext.thisSettingsPage.select_developer()
+    currentPageObjectContext.thisDeveloperSettingsPage.select_use_verifier_capability()
+    currentPageObjectContext.thisSettingsPage = currentPageObjectContext.thisDeveloperSettingsPage.select_back()
+    currentPageObjectContext.thisSettingsPage.select_back()
+    if currentPageObjectContext.thisHomePage.welcome_to_bc_wallet_modal.is_displayed():
+        currentPageObjectContext.thisHomePage.welcome_to_bc_wallet_modal.select_dismiss()
+    assert currentPageObjectContext.thisHomePage.on_this_page()
+
+@given('the {user} has selected to use the {proof_name} proof')
+def step_turn_on_verifier_capability(context, proof_name, user):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisSettingsPage = currentPageObjectContext.thisHomePage.select_settings()
+    currentPageObjectContext.thisChooseAProofRequestPage = currentPageObjectContext.thisSettingsPage.select_send_a_proof_request()
+    currentPageObjectContext.thisUseThisProofRequestPage = currentPageObjectContext.thisChooseAProofRequestPage.select_proof_request(proof_name)
+    currentPageObjectContext.thisProofRequestQRCodePage = currentPageObjectContext.thisUseThisProofRequestPage.select_use_this_proof_request()
+    context.mobile_verifier_qrcode_image = currentPageObjectContext.thisProofRequestQRCodePage.get_qr_code_image()
+
+
+@when('the {user} scans the QR Code from the Verifier')
+def step_when_holder_scans_QR_code(context, user):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    context.multi_device_service_handlers[user].inject_qrcode(context.mobile_verifier_qrcode_image)
+    currentPageObjectContext.thisNavBar.select_scan()
+
 
 @when('the holder receives the proof request')
 def step_when_holder_receives_proof_request(context):
