@@ -36,7 +36,7 @@ def step_impl(context):
     # assert context.thisCredentialOfferNotificationPage.on_this_page()
 
 
-@given('the {user} receives a credential offer of {credential}')
+@given('the "{user}" receives a credential offer of {credential}')
 @given('the Holder receives a credential offer of {credential}')
 @when('the Holder receives a credential offer of {credential}')
 @when('the Holder receives a credential offer of {credential} with revocable set as {revocation}') 
@@ -190,7 +190,7 @@ def step_impl(context):
         scroll=True)
     context.thisHomePage = context.thisDeclineCredentialOffer.select_decline()
 
-@when('the {user} is informed that their credential is on the way with an indication of loading')
+@when('the "{user}" is informed that their credential is on the way with an indication of loading')
 @then('the holder is informed that their credential is on the way with an indication of loading')
 @when('the holder is informed that their credential is on the way with an indication of loading')
 def step_impl(context, user=None):

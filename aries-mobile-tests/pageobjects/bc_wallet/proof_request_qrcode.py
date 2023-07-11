@@ -4,7 +4,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pageobjects.basepage import BasePage
-from pageobjects.bc_wallet.proof_request_qrcode import ProofRequestQRCodePage
 
 
 # These classes can inherit from a BasePage to do common setup and functions

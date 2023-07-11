@@ -3,7 +3,7 @@
 #
 # -----------------------------------------------------------
 
-from behave import given, when, then
+from behave import given, when, then, step
 import json
 from time import sleep
 
@@ -389,19 +389,19 @@ def step_impl(context, user=None):
 
 
 @given('the PCTF member has an Unverified Person {credential}')
-@given('the {user} has an Unverified Person {credential}')
+@step('the {user} has an Unverified Person {credential}')
 def step_impl(context, credential, user=None):
     if "PerformanceTest" in context.tags:
         context.issuer.restart_issue_credential()
 
     if user:
         context.execute_steps(f'''
-            Given the {user} receives a credential offer of {credential}
+            Given the "{user}" receives a credential offer of {credential}
             And the {user} Scans the credential offer QR Code
             And the Connecting completes successfully
             Then the {user} is brought to the credential offer screen
             When the {user} selects Accept
-            And the {user}is informed that their credential is on the way with an indication of loading
+            And the "{user}" is informed that their credential is on the way with an indication of loading
             And once the credential arrives the {user} is informed that the Credential is added to your wallet
             And the {user} selects Done
             Then the {user} is brought to the list of credentials
@@ -410,7 +410,7 @@ def step_impl(context, credential, user=None):
         context.execute_steps(u'''
             Then the credential accepted is at the top of the list for the {user}
             {table}
-        '''.format(table=table_to_str(context.table)))
+        '''.format(user=user, table=table_to_str(context.table)))
     else:
         context.execute_steps(f'''
             Given the Holder receives a credential offer of {credential}
@@ -439,7 +439,7 @@ def step_impl(context, user=None):
     else:
         driver = context.driver
 
-    if hasattr(context, 'thisNavBar') == False:
+    if hasattr(currentPageObjectContext, 'thisNavBar') == False:
         currentPageObjectContext.thisNavBar = NavBar(driver)
     currentPageObjectContext.thisConnectingPage = currentPageObjectContext.thisNavBar.select_scan()
 

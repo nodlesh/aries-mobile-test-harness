@@ -4,7 +4,7 @@
 # -----------------------------------------------------------
 
 import logging
-from behave import given, when, then
+from behave import given, when, then, step
 import os, json
 from decouple import config
 #from behave import step
@@ -214,7 +214,8 @@ def step_impl(context, n):
 
     # Create a dictionary that will be indexed on role and give the device_service_handler apropriate for the device set
     context.multi_device_service_handlers = {}
-    holder_thread = threading.Thread(target=setup_holder, args=(context,))
+    context.multi_device_threads = {}
+    #holder_thread = threading.Thread(target=setup_holder, args=(context,))
     verifier_thread = threading.Thread(target=setup_verifier, args=(context,))
 
     # Create a dictionary that will be indexed on role and give the page object apropriate for the device set
@@ -226,7 +227,9 @@ def step_impl(context, n):
     for row in context.table:
         if row["role"] == "holder":
             if row["device"] == "default" and row["device_handler"] == "existing":
-                holder_thread.start()
+                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_holder, args=(context,))
+                #holder_thread.start()
+                context.multi_device_threads[row["role"]].start()
             elif row["device"] == "opposite":
                 # pass for now
                 # TODO add the creation of a new device service handler for the opposite device
@@ -235,7 +238,9 @@ def step_impl(context, n):
         elif row["role"] == "verifier" and row["device_handler"] == "new":
             if row["device"] == "default":
                 # start a device service handler the same as the default device handler
-                verifier_thread.start()
+                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_holder, args=(context,))
+                context.multi_device_threads[row["role"]].start()
+                #verifier_thread.start()
 
             elif row["device"] == "opposite":
                 # pass for now
@@ -247,8 +252,8 @@ def step_impl(context, n):
             logging.ERROR(
                 f"Data table in step contains an unrecognized role '{role}', must be holder or verifier"
             )
-    holder_thread.join()
-    verifier_thread.join()
+    #holder_thread.join()
+   # verifier_thread.join()
 
 
 def setup_holder(context):
@@ -293,21 +298,34 @@ def setup_verifier(context):
     ''')
 
 
-@given('the {user} has credentials')
+@step('the "{user}" has credentials')
 def step_the_user_has_a_credential(context, user):
+    context.multi_device_threads[user].join()
+    context.multi_device_threads[user] = threading.Thread(target=the_user_has_a_credential, args=(context, user))
+    context.multi_device_threads[user].start()
+
+def the_user_has_a_credential(context, user):
+
     for row in context.table:
         if row["credential_name"] == "Unverified Person":
-            credential = row["credential_name"]
-            context.execute_steps(f'''
-                Given the {user} has an Unverified Person {credential}"
-            ''')
+            credential = row["credential"]
+            context.execute_steps(u'''
+                Given the {user} has an Unverified Person {credential}
+                {table}
+            '''.format(user=user, credential=credential, table=table_to_str(context.table)))
         else:
             # pass for POC
             # TODO call the old Holder has credentials step
             pass
 
-@given('the {user} wants to prove that the holder {proof_name}')
+@given('the "{user}" wants to prove that the holder {proof_name}')
 def step_given_verifier_proof(context, proof_name, user):
+    context.multi_device_threads[user].join()
+    context.multi_device_threads[user] = threading.Thread(target=given_verifier_proof, args=(context, proof_name, user))
+    context.multi_device_threads[user].start()
+
+
+def given_verifier_proof(context, proof_name, user):
     # Code to set the proof information for the verifier
     context.execute_steps(f'''
         Given the {user} has user Verifier capability turned on in dev options
@@ -315,7 +333,7 @@ def step_given_verifier_proof(context, proof_name, user):
     ''')
 
 @given('the {user} has user Verifier capability turned on in dev options')
-def step_turn_on_verifier_capability(context, proof_name, user):
+def step_turn_on_verifier_capability(context, user):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
     currentPageObjectContext.thisSettingsPage = currentPageObjectContext.thisHomePage.select_settings()
@@ -341,6 +359,9 @@ def step_turn_on_verifier_capability(context, proof_name, user):
 
 @when('the {user} scans the QR Code from the Verifier')
 def step_when_holder_scans_QR_code(context, user):
+    context.multi_device_threads[user].join()
+    context.multi_device_threads["verifier"].join()
+
     currentPageObjectContext = set_current_page_object_context(context, user)
 
     context.multi_device_service_handlers[user].inject_qrcode(context.mobile_verifier_qrcode_image)
