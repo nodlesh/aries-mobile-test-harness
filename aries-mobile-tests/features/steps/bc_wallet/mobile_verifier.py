@@ -3,6 +3,7 @@
 #
 # -----------------------------------------------------------
 
+import copy
 import logging
 from behave import given, when, then, step
 import os, json
@@ -216,7 +217,7 @@ def step_impl(context, n):
     context.multi_device_service_handlers = {}
     context.multi_device_threads = {}
     #holder_thread = threading.Thread(target=setup_holder, args=(context,))
-    verifier_thread = threading.Thread(target=setup_verifier, args=(context,))
+    #verifier_thread = threading.Thread(target=setup_verifier, args=(context,))
 
     # Create a dictionary that will be indexed on role and give the page object apropriate for the device set
     # Create an instance of the custom dictionary
@@ -227,7 +228,8 @@ def step_impl(context, n):
     for row in context.table:
         if row["role"] == "holder":
             if row["device"] == "default" and row["device_handler"] == "existing":
-                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_holder, args=(context,))
+                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_holder, args=(context, row["role"]))
+                #holder_thread = threading.Thread(target=setup_holder, args=(context, row["role"]))
                 #holder_thread.start()
                 context.multi_device_threads[row["role"]].start()
             elif row["device"] == "opposite":
@@ -235,11 +237,12 @@ def step_impl(context, n):
                 # TODO add the creation of a new device service handler for the opposite device
                 pass
 
-        elif row["role"] == "verifier" and row["device_handler"] == "new":
+        elif row["role"] == "verifier":
             if row["device"] == "default":
                 # start a device service handler the same as the default device handler
-                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_holder, args=(context,))
+                context.multi_device_threads[row["role"]] = threading.Thread(target=setup_verifier, args=(context, row["role"], row["device_handler"]))
                 context.multi_device_threads[row["role"]].start()
+                #verifier_thread = threading.Thread(target=setup_verifier, args=(context, row["role"]))
                 #verifier_thread.start()
 
             elif row["device"] == "opposite":
@@ -252,87 +255,100 @@ def step_impl(context, n):
             logging.ERROR(
                 f"Data table in step contains an unrecognized role '{role}', must be holder or verifier"
             )
-    #holder_thread.join()
-   # verifier_thread.join()
+    # holder_thread.join()
+    # verifier_thread.join()
+    #context.multi_device_threads["holder"].join()
+    #context.multi_device_threads["verifier"].join()
+    
 
 
-def setup_holder(context):
-    context.multi_device_service_handlers["holder"] = context.device_service_handler
 
-    context.multi_device_page_objects['holder'] = SimpleNamespace()
+def setup_holder(context, holder_name, device_handler="existing"):
+    context.multi_device_service_handlers[holder_name] = context.device_service_handler
+
+    context.multi_device_page_objects[holder_name] = SimpleNamespace()
     context.execute_steps(f'''
-        Given the {"holder"} has setup thier wallet
-        And the {"holder"} has selected not to use biometrics to unlock BC Wallet
-    ''')
-
-def setup_verifier(context):
-    # Get the Device Cloud Service passed in from manage
-    device_cloud_service = config('DEVICE_CLOUD')
-    os.environ['SAUCE_USERNAME'] = 'oauth-shel2cventures-1c214'
-    os.environ['SAUCE_ACCESS_KEY'] = 'd9badc39-f746-4f9d-9358-da6a5ec38aa7'
-
-    # get the dafault config filed
-    config_file_path = os.path.join(os.getcwd(), "config.json")
-
-    # Create the Device Service Handler requested 
-    dcshf = DeviceServiceHandlerFactory()
-    device_service_handler = dcshf.create_device_service_handler(device_cloud_service, config_file_path)
-
-    context.multi_device_service_handlers["verifier"] = device_service_handler
-
-    extra_desired_capabilities = {
-        'name': context.scenario.name
-    }
-    context.multi_device_service_handlers["verifier"].set_desired_capabilities(extra_desired_capabilities)
-
-    context.multi_device_service_handlers["verifier"].initialize_driver()
-
-    print("\nActual Capabilities used by Appium:")
-    print(json.dumps(context.multi_device_service_handlers["verifier"]._driver.capabilities,indent=4))
-
-    context.multi_device_page_objects['verifier'] = SimpleNamespace()
-
-    context.execute_steps(f'''
-        Given the {"verifier"} has setup thier wallet
-        And the {"verifier"} has selected not to use biometrics to unlock BC Wallet
+        Given the "{holder_name}" has setup thier wallet
+        And the "{holder_name}" has selected not to use biometrics to unlock BC Wallet
     ''')
 
 
-@step('the "{user}" has credentials')
-def step_the_user_has_a_credential(context, user):
-    context.multi_device_threads[user].join()
-    context.multi_device_threads[user] = threading.Thread(target=the_user_has_a_credential, args=(context, user))
-    context.multi_device_threads[user].start()
+def setup_verifier(context, verifier_name, device_handler="new"):
+    if device_handler == "new":
+        # Get the Device Cloud Service passed in from manage
+        device_cloud_service = config('DEVICE_CLOUD')
+        os.environ['SAUCE_USERNAME'] = 'oauth-shel2cventures-1c214'
+        os.environ['SAUCE_ACCESS_KEY'] = 'd9badc39-f746-4f9d-9358-da6a5ec38aa7'
 
-def the_user_has_a_credential(context, user):
+        # get the dafault config filed
+        config_file_path = os.path.join(os.getcwd(), "config.json")
 
-    for row in context.table:
+        # Create the Device Service Handler requested 
+        dcshf = DeviceServiceHandlerFactory()
+        device_service_handler = dcshf.create_device_service_handler(device_cloud_service, config_file_path)
+
+        context.multi_device_service_handlers[verifier_name] = device_service_handler
+
+        extra_desired_capabilities = {
+            'name': context.scenario.name
+        }
+        context.multi_device_service_handlers[verifier_name].set_desired_capabilities(extra_desired_capabilities)
+
+        context.multi_device_service_handlers[verifier_name].initialize_driver()
+
+        print("\nActual Capabilities used by Appium:")
+        print(json.dumps(context.multi_device_service_handlers[verifier_name]._driver.capabilities,indent=4))
+    else:
+        context.multi_device_service_handlers[verifier_name] = context.device_service_handler
+
+    context.multi_device_page_objects[verifier_name] = SimpleNamespace()
+
+    context.execute_steps(f'''
+        Given the "{verifier_name}" has setup thier wallet
+        And the "{verifier_name}" has selected not to use biometrics to unlock BC Wallet
+    ''')
+
+
+@step('the "{holder}" has credentials and the "{verifier}" wants to prove that the holder {proof_name}')
+def step_the_user_has_a_credential(context, holder, verifier, proof_name):
+    table = copy.deepcopy(context.table)
+    # context.multi_device_threads[holder].join()
+    # context.multi_device_threads[holder] = threading.Thread(target=the_user_has_a_credential, args=(context, holder, table))
+    # context.multi_device_threads[holder].start()
+
+    context.multi_device_threads[verifier].join()
+    context.multi_device_threads[verifier] = threading.Thread(target=given_verifier_proof, args=(context, proof_name, verifier))
+    context.multi_device_threads[verifier].start()
+
+def the_user_has_a_credential(context, user, table):
+
+    for row in table:
         if row["credential_name"] == "Unverified Person":
             credential = row["credential"]
             context.execute_steps(u'''
-                Given the {user} has an Unverified Person {credential}
+                Given the "{user}" has an Unverified Person {credential}
                 {table}
-            '''.format(user=user, credential=credential, table=table_to_str(context.table)))
+            '''.format(user=user, credential=credential, table=table_to_str(table)))
         else:
             # pass for POC
             # TODO call the old Holder has credentials step
             pass
 
-@given('the "{user}" wants to prove that the holder {proof_name}')
-def step_given_verifier_proof(context, proof_name, user):
-    context.multi_device_threads[user].join()
-    context.multi_device_threads[user] = threading.Thread(target=given_verifier_proof, args=(context, proof_name, user))
-    context.multi_device_threads[user].start()
+# @given('the "{user}" wants to prove that the holder {proof_name}')
+# def step_given_verifier_proof(context, proof_name, user):
+#     context.multi_device_threads[user].join()
+#     context.multi_device_threads[user] = threading.Thread(target=given_verifier_proof, args=(context, proof_name, user))
+#     context.multi_device_threads[user].start()
 
 
 def given_verifier_proof(context, proof_name, user):
     # Code to set the proof information for the verifier
     context.execute_steps(f'''
-        Given the {user} has user Verifier capability turned on in dev options
-        And the {user} has selected to use the {proof_name} proof
+        Given the "{user}" has user Verifier capability turned on in dev options
+        And the "{user}" has selected to use the {proof_name} proof
     ''')
 
-@given('the {user} has user Verifier capability turned on in dev options')
+@given('the "{user}" has user Verifier capability turned on in dev options')
 def step_turn_on_verifier_capability(context, user):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
@@ -346,7 +362,7 @@ def step_turn_on_verifier_capability(context, user):
         currentPageObjectContext.thisHomePage.welcome_to_bc_wallet_modal.select_dismiss()
     assert currentPageObjectContext.thisHomePage.on_this_page()
 
-@given('the {user} has selected to use the {proof_name} proof')
+@given('the "{user}" has selected to use the {proof_name} proof')
 def step_turn_on_verifier_capability(context, proof_name, user):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
@@ -357,7 +373,7 @@ def step_turn_on_verifier_capability(context, proof_name, user):
     context.mobile_verifier_qrcode_image = currentPageObjectContext.thisProofRequestQRCodePage.get_qr_code_image()
 
 
-@when('the {user} scans the QR Code from the Verifier')
+@when('the "{user}" scans the QR Code from the Verifier')
 def step_when_holder_scans_QR_code(context, user):
     context.multi_device_threads[user].join()
     context.multi_device_threads["verifier"].join()

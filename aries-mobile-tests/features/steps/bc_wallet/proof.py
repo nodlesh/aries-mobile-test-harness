@@ -369,15 +369,15 @@ def step_impl(context):
         ''')
 
 
-@given('the {user} has setup thier Wallet')
+@given('the "{user}" has setup thier Wallet')
 @given('the Holder has setup thier Wallet')
 def step_impl(context, user=None):
 
     if user:
         context.execute_steps(f'''
-            Given the {user} has skipped on-boarding
-            And the {user} has accepted the Terms and Conditions
-            And a PIN has been set up with "369369" by the {user}
+            Given the "{user}" has skipped on-boarding
+            And the "{user}" has accepted the Terms and Conditions
+            And a PIN has been set up with "369369" by the "{user}"
         ''')
         
     else:
@@ -389,7 +389,7 @@ def step_impl(context, user=None):
 
 
 @given('the PCTF member has an Unverified Person {credential}')
-@step('the {user} has an Unverified Person {credential}')
+@step('the "{user}" has an Unverified Person {credential}')
 def step_impl(context, credential, user=None):
     if "PerformanceTest" in context.tags:
         context.issuer.restart_issue_credential()
@@ -397,18 +397,18 @@ def step_impl(context, credential, user=None):
     if user:
         context.execute_steps(f'''
             Given the "{user}" receives a credential offer of {credential}
-            And the {user} Scans the credential offer QR Code
+            And the "{user}" Scans the credential offer QR Code
             And the Connecting completes successfully
-            Then the {user} is brought to the credential offer screen
-            When the {user} selects Accept
+            Then the "{user}" is brought to the credential offer screen
+            When the "{user}" selects Accept
             And the "{user}" is informed that their credential is on the way with an indication of loading
-            And once the credential arrives the {user} is informed that the Credential is added to your wallet
-            And the {user} selects Done
-            Then the {user} is brought to the list of credentials
+            And once the credential arrives the "{user}" is informed that the Credential is added to your wallet
+            And the "{user}" selects Done
+            Then the "{user}" is brought to the list of credentials
         ''')
         
         context.execute_steps(u'''
-            Then the credential accepted is at the top of the list for the {user}
+            Then the credential accepted is at the top of the list for the "{user}"
             {table}
         '''.format(user=user, table=table_to_str(context.table)))
     else:
@@ -430,7 +430,7 @@ def step_impl(context, credential, user=None):
         '''.format(table=table_to_str(context.table)))
 
 
-@given('the {user} Scans the credential offer QR Code')
+@given('the "{user}" Scans the credential offer QR Code')
 @given('they Scan the credential offer QR Code')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)

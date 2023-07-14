@@ -20,14 +20,14 @@ from pageobjects.bc_wallet.biometrics import BiometricsPage
 from pageobjects.bc_wallet.pin import PINPage
 
 
-@given('the {user} has accepted the Terms and Conditions')
+@given('the "{user}" has accepted the Terms and Conditions')
 @given('the User has accepted the Terms and Conditions')
 def step_impl(context, user=None):
     if user:
         context.execute_steps(f'''
-            Given the {user} is on the Terms and Conditions screen
-            And the {user} accepts the Terms and Conditions
-            And the {user} clicks continue
+            Given the "{user}" is on the Terms and Conditions screen
+            And the "{user}" accepts the Terms and Conditions
+            And the "{user}" clicks continue
         ''')
     else:
         context.execute_steps(f'''
@@ -37,7 +37,7 @@ def step_impl(context, user=None):
         ''')
 
 
-@when('the {user} enters the first PIN as "{pin}"')
+@when('the "{user}" enters the first PIN as "{pin}"')
 @when('the User enters the first PIN as {pin}')
 @when('the User enters the first PIN as "{pin}"')
 def step_impl(context, pin, user=None):
@@ -48,7 +48,7 @@ def step_impl(context, pin, user=None):
     #assert pin == context.thisPINSetupPage.get_pin()
 
 
-@when('the {user} re-enters the PIN as "{pin}"')
+@when('the "{user}" re-enters the PIN as "{pin}"')
 @when('the User re-enters the PIN as {pin}')
 @then('the User re-enters the PIN as "{pin}"')
 @when('the User re-enters the PIN as "{pin}"')
@@ -60,7 +60,7 @@ def step_impl(context, pin, user=None):
     #assert pin == context.thisPINSetupPage.get_second_pin()
 
 
-@when('the {user} selects Create PIN')
+@when('the "{user}" selects Create PIN')
 @then('the User selects Create PIN')
 @when('the User selects Create PIN')
 def step_impl(context, user=None):
@@ -76,7 +76,7 @@ def step_impl(context):
     context.thisInitializationPage = context.thisOnboardingBiometricsPage.select_continue()
     context.device_service_handler.biometrics_authenticate(True)
 
-@when('the {user} selects not to use Biometrics')
+@when('the "{user}" selects not to use Biometrics')
 @when('the User selects not to use Biometrics')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
@@ -94,7 +94,7 @@ def step_impl(context):
     else:
         assert context.thisHomePage.on_this_page()
 
-@then('the {user} lands on the Home screen')
+@then('the "{user}" lands on the Home screen')
 @then('they land on the Home screen')
 @when('initialization ends (failing silently)')
 def step_impl(context, user=None):
@@ -116,7 +116,7 @@ def step_impl(context, user=None):
     env = "Test"
     if user:
         context.execute_steps(f'''
-            Given the App environment is set to {env} for {user}
+            Given the App environment is set to {env} for "{user}"
         ''')
     else:
         context.execute_steps(f'''
@@ -125,7 +125,7 @@ def step_impl(context, user=None):
 
 
 @given('the App environment is set to {env}')
-@given('the App environment is set to {env} for {user}')
+@given('the App environment is set to {env} for "{user}"')
 def step_impl(context, env, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
@@ -152,13 +152,13 @@ def step_impl(context):
         Then they land on the Home screen
     ''')
 
-@given('the {user} has selected not to use biometrics to unlock BC Wallet')
+@given('the "{user}" has selected not to use biometrics to unlock BC Wallet')
 @given('the Holder has selected not to use biometrics to unlock BC Wallet')
 def step_impl(context, user=None):
     if user:
         context.execute_steps(f'''
-            When the {user} selects not to use Biometrics
-            Then the {user} lands on the Home screen
+            When the "{user}" selects not to use Biometrics
+            Then the "{user}" lands on the Home screen
         ''')
     else:
         context.execute_steps('''

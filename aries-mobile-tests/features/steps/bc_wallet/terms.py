@@ -32,14 +32,14 @@ def step_impl(context):
         ''')
 
 
-@given('the {user} has skipped on-boarding')
+@given('the "{user}" has skipped on-boarding')
 @given('the User has skipped on-boarding')
 def step_impl(context, user=None):
     if user:
         context.execute_steps(f'''
-                Given the new {user} has opened the app for the first time
-                Given the {user} is on the onboarding Welcome screen
-                When the {user} selects Skip
+                Given the new "{user}" has opened the app for the first time
+                Given the "{user}" is on the onboarding Welcome screen
+                When the "{user}" selects Skip
             ''')
     else:
         context.execute_steps(f'''
@@ -48,20 +48,20 @@ def step_impl(context, user=None):
                 When the user selects Skip
             ''')
 
-@given('the {user} is on the Terms and Conditions screen')
+@given('the "{user}" is on the Terms and Conditions screen')
 @given('the User was on the Terms and Conditions screen')
 @given('the User is on the Terms and Conditions screen')
 def step_impl(context, user=None):
     if user:
         context.execute_steps(f'''
-                Then the {user} is brought to the Terms and Conditions screen
+                Then the "{user}" is brought to the Terms and Conditions screen
             ''')
     else:
         context.execute_steps(f'''
                 Then are brought to the Terms and Conditions screen
             ''')
 
-@given('the {user} accepts the Terms and Conditions')
+@given('the "{user}" accepts the Terms and Conditions')
 @given('the users accepts the Terms and Conditions')
 @when('the users accepts the Terms and Conditions')
 def step_impl(context, user=None):
@@ -69,7 +69,7 @@ def step_impl(context, user=None):
 
     currentPageObjectContext.thisTermsAndConditionsPage.select_accept()
 
-@given('the {user} clicks continue')
+@given('the "{user}" clicks continue')
 @given('the user clicks continue')
 @when('the user clicks continue')
 def step_impl(context, user=None):
@@ -78,7 +78,7 @@ def step_impl(context, user=None):
     currentPageObjectContext.thisPINSetupPage = currentPageObjectContext.thisTermsAndConditionsPage.select_continue()
 
 
-@given('the {user} is on the PIN creation screen')
+@given('the "{user}" is on the PIN creation screen')
 @given('the User is on the PIN creation screen')
 @then('the user transitions to the PIN creation screen')
 def step_impl(context, user=None):

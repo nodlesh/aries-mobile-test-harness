@@ -17,7 +17,7 @@ from pageobjects.bc_wallet.onboardingsharenecessary import OnboardingShareNecess
 from pageobjects.bc_wallet.termsandconditions import TermsAndConditionsPage
 
 
-@given('the new {user} has opened the app for the first time')
+@given('the new "{user}" has opened the app for the first time')
 @given('the new user has opened the app for the first time')
 def step_impl(context, user=None):
     # App opened already buy appium. 
@@ -30,7 +30,7 @@ def step_impl(context, user=None):
         context.thisOnboardingWelcomePage = OnboardingWelcomePage(context.driver)
     
 
-@given('the {user} is on the onboarding Welcome screen')
+@given('the "{user}" is on the onboarding Welcome screen')
 @given('the user is on the onboarding Welcome screen')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
@@ -78,7 +78,7 @@ def step_impl(context):
 
 
 @then('are brought to the Terms and Conditions screen')
-@then('the {user} is brought to the Terms and Conditions screen')
+@then('the "{user}" is brought to the Terms and Conditions screen')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
 
@@ -125,7 +125,7 @@ def step_impl(context, screen):
         raise Exception(f"Unexpected screen, {screen}")
 
 
-@when('the {user} selects Skip')
+@when('the "{user}" selects Skip')
 @when('the user selects Skip')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)

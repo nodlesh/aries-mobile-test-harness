@@ -101,7 +101,7 @@ def step_impl(context):
     #context.thisCredentialOfferPage = context.thisCredentialOfferNotificationPage.select_credential()
 
 
-@then('the {user} is brought to the credential offer screen')
+@then('the "{user}" is brought to the credential offer screen')
 @then('holder is brought to the credential offer screen')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
@@ -175,7 +175,7 @@ def step_impl(context, credential, revocation=None):
         ''')
 
 
-@when('the {user} selects Accept')
+@when('the "{user}" selects Accept')
 @then('they select Accept')
 @when('they select Accept')
 def step_impl(context, user=None):
@@ -202,7 +202,7 @@ def step_impl(context, user=None):
         pass
 
 
-@when('once the credential arrives the {user} is informed that the Credential is added to your wallet')
+@when('once the credential arrives the "{user}" is informed that the Credential is added to your wallet')
 @then('once the credential arrives they are informed that the Credential is added to your wallet')
 @when('once the credential arrives they are informed that the Credential is added to your wallet')
 def step_impl(context, user=None):
@@ -214,7 +214,7 @@ def step_impl(context, user=None):
         currentPageObjectContext.thisHomePage = currentPageObjectContext.thisCredentialOnTheWayPage.select_home()
 
 
-@when('the {user} selects Done')
+@when('the "{user}" selects Done')
 @then('they select Done')
 @when('they select Done')
 def step_impl(context, user=None):
@@ -231,14 +231,14 @@ def step_impl(context, user=None):
     currentPageObjectContext.thisCredentialsPage = currentPageObjectContext.thisCredentialAddedPage.select_done()
 
 
-@then(u'the {user} is brought to the list of credentials')
+@then(u'the "{user}" is brought to the list of credentials')
 @then(u'they are brought to the list of credentials')
 def step_impl(context, user=None):
     currentPageObjectContext = set_current_page_object_context(context, user)
     currentPageObjectContext.thisCredentialsPage.on_this_page()
 
 
-@then(u'the credential accepted is at the top of the list for the {user}')
+@then(u'the credential accepted is at the top of the list for the "{user}"')
 @then(u'the credential {credential_name} is accepted is at the top of the list')
 @then(u'the IDIM Person credential accepted is at the top of the list')
 @then(u'the credential accepted is at the top of the list')

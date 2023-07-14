@@ -18,14 +18,14 @@ from pageobjects.bc_wallet.home import HomePage
 from pageobjects.bc_wallet.camera_privacy_policy import CameraPrivacyPolicyPage
 
 @given('a PIN has been set up with "{pin}"')
-@given('a PIN has been set up with "{pin}" by the {user}')
+@given('a PIN has been set up with "{pin}" by the "{user}"')
 def step_impl(context, pin, user=None):
     if user:
         context.execute_steps(f'''
-            Given the {user} is on the PIN creation screen
-            When the {user} enters the first PIN as "{pin}"
-            And the {user} re-enters the PIN as "{pin}"
-            And the {user} selects Create PIN
+            Given the "{user}" is on the PIN creation screen
+            When the "{user}" enters the first PIN as "{pin}"
+            And the "{user}" re-enters the PIN as "{pin}"
+            And the "{user}" selects Create PIN
         ''')
     else:
         context.execute_steps(f'''
