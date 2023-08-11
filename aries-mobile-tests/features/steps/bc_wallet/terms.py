@@ -8,7 +8,7 @@ import json
 
 # Local Imports
 from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
-from agent_test_utils import get_qr_code_from_invitation
+from agent_test_utils import get_qr_code_from_invitation, set_current_page_object_context
 # import Page Objects needed
 from pageobjects.bc_wallet.termsandconditions import TermsAndConditionsPage
 from pageobjects.bc_wallet.secure import SecurePage
@@ -32,36 +32,59 @@ def step_impl(context):
         ''')
 
 
+@given('the "{user}" has skipped on-boarding')
 @given('the User has skipped on-boarding')
-def step_impl(context):
-    context.execute_steps(f'''
-            Given the new user has opened the app for the first time
-            Given the user is on the onboarding Welcome screen
-            When the user selects Skip
-        ''')
+def step_impl(context, user=None):
+    if user:
+        context.execute_steps(f'''
+                Given the new "{user}" has opened the app for the first time
+                Given the "{user}" is on the onboarding Welcome screen
+                When the "{user}" selects Skip
+            ''')
+    else:
+        context.execute_steps(f'''
+                Given the new user has opened the app for the first time
+                Given the user is on the onboarding Welcome screen
+                When the user selects Skip
+            ''')
 
+@given('the "{user}" is on the Terms and Conditions screen')
 @given('the User was on the Terms and Conditions screen')
 @given('the User is on the Terms and Conditions screen')
-def step_impl(context):
-    context.execute_steps(f'''
-            Then are brought to the Terms and Conditions screen
-        ''')
+def step_impl(context, user=None):
+    if user:
+        context.execute_steps(f'''
+                Then the "{user}" is brought to the Terms and Conditions screen
+            ''')
+    else:
+        context.execute_steps(f'''
+                Then are brought to the Terms and Conditions screen
+            ''')
 
+@given('the "{user}" accepts the Terms and Conditions')
 @given('the users accepts the Terms and Conditions')
 @when('the users accepts the Terms and Conditions')
-def step_impl(context):
-    context.thisTermsAndConditionsPage.select_accept()
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
 
+    currentPageObjectContext.thisTermsAndConditionsPage.select_accept()
+
+@given('the "{user}" clicks continue')
 @given('the user clicks continue')
 @when('the user clicks continue')
-def step_impl(context):
-    context.thisPINSetupPage = context.thisTermsAndConditionsPage.select_continue()
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisPINSetupPage = currentPageObjectContext.thisTermsAndConditionsPage.select_continue()
 
 
+@given('the "{user}" is on the PIN creation screen')
 @given('the User is on the PIN creation screen')
 @then('the user transitions to the PIN creation screen')
-def step_impl(context):
-    context.thisPINSetupPage.on_this_page()
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+
+    currentPageObjectContext.thisPINSetupPage.on_this_page()
 
 
 @then('they can accept the Terms and conditions')

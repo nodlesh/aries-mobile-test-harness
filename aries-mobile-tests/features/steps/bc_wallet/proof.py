@@ -4,13 +4,13 @@
 # -----------------------------------------------------------
 
 import logging
-from behave import given, when, then
+from behave import given, when, then, step
 import json
 from time import sleep
 
 # Local Imports
 from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
-from agent_test_utils import get_qr_code_from_invitation, table_to_str, create_non_revoke_interval
+from agent_test_utils import get_qr_code_from_invitation, table_to_str, create_non_revoke_interval, set_current_page_object_context
 # import Page Objects needed
 # from pageobjects.bc_wallet.credential_offer_notification import CredentialOfferNotificationPage
 from pageobjects.bc_wallet.information_sent_successfully import InformationSentSuccessfullyPage
@@ -378,9 +378,19 @@ def step_impl(context):
         ''')
 
 
+@given('the "{user}" has setup thier Wallet')
 @given('the Holder has setup thier Wallet')
-def step_impl(context):
-    context.execute_steps(f'''
+def step_impl(context, user=None):
+
+    if user:
+        context.execute_steps(f'''
+            Given the "{user}" has skipped on-boarding
+            And the "{user}" has accepted the Terms and Conditions
+            And a PIN has been set up with "369369" by the "{user}"
+        ''')
+        
+    else:
+        context.execute_steps(f'''
             Given the User has skipped on-boarding
             And the User has accepted the Terms and Conditions
             And a PIN has been set up with "369369"
@@ -388,57 +398,84 @@ def step_impl(context):
 
 
 @given('the PCTF member has an Unverified Person {credential}')
-def step_impl(context, credential):
+@step('the "{user}" has an Unverified Person {credential}')
+def step_impl(context, credential, user=None):
     if "PerformanceTest" in context.tags:
         context.issuer.restart_issue_credential()
-    context.execute_steps(f'''
-        Given the Holder receives a credential offer of {credential}
-        And they Scan the credential offer QR Code
-        And the Connecting completes successfully
-        Then holder is brought to the credential offer screen
-        When they select Accept
-        And the holder is informed that their credential is on the way with an indication of loading
-        And once the credential arrives they are informed that the Credential is added to your wallet
-        And they select Done
-        Then they are brought to the list of credentials
-    ''')
 
-    context.execute_steps(u'''
-        Then the credential accepted is at the top of the list
-        {table}
-    '''.format(table=table_to_str(context.table)))
+    if user:
+        context.execute_steps(f'''
+            Given the "{user}" receives a credential offer of {credential}
+            And the "{user}" Scans the credential offer QR Code
+            And the Connecting completes successfully
+            Then the "{user}" is brought to the credential offer screen
+            When the "{user}" selects Accept
+            And the "{user}" is informed that their credential is on the way with an indication of loading
+            And once the credential arrives the "{user}" is informed that the Credential is added to your wallet
+            And the "{user}" selects Done
+            Then the "{user}" is brought to the list of credentials
+        ''')
+        
+        context.execute_steps(u'''
+            Then the credential accepted is at the top of the list for the "{user}"
+            {table}
+        '''.format(user=user, table=table_to_str(context.table)))
+    else:
+        context.execute_steps(f'''
+            Given the Holder receives a credential offer of {credential}
+            And they Scan the credential offer QR Code
+            And the Connecting completes successfully
+            Then holder is brought to the credential offer screen
+            When they select Accept
+            And the holder is informed that their credential is on the way with an indication of loading
+            And once the credential arrives they are informed that the Credential is added to your wallet
+            And they select Done
+            Then they are brought to the list of credentials
+        ''')
+
+        context.execute_steps(u'''
+            Then the credential accepted is at the top of the list
+            {table}
+        '''.format(table=table_to_str(context.table)))
 
 
+@given('the "{user}" Scans the credential offer QR Code')
 @given('they Scan the credential offer QR Code')
-def step_impl(context):
-    if hasattr(context, 'thisNavBar') == False:
-        context.thisNavBar = NavBar(context.driver)
-    context.thisConnectingPage = context.thisNavBar.select_scan()
+def step_impl(context, user=None):
+    currentPageObjectContext = set_current_page_object_context(context, user)
+    if user:
+        driver = context.multi_device_service_handlers[user]._driver
+    else:
+        driver = context.driver
+
+    if hasattr(currentPageObjectContext, 'thisNavBar') == False:
+        currentPageObjectContext.thisNavBar = NavBar(driver)
+    currentPageObjectContext.thisConnectingPage = currentPageObjectContext.thisNavBar.select_scan()
 
     # If this is the first time the user selects scan, then they will get a Camera Privacy Policy that needs to be dismissed
     # if autoGrantPermissions is in Capabilities = True, and platform is Android, skip this
-    if ('autoGrantPermissions' in context.driver.capabilities and context.driver.capabilities['autoGrantPermissions'] == False) or (context.driver.capabilities['platformName'] == 'iOS'):
-        context.thisCameraPrivacyPolicyPage = CameraPrivacyPolicyPage(
-            context.driver)
-        if context.thisCameraPrivacyPolicyPage.on_this_page():
-            context.thisCameraPrivacyPolicyPage.select_allow()
+    if ('autoGrantPermissions' in driver.capabilities and driver.capabilities['autoGrantPermissions'] == False) or (driver.capabilities['platformName'] == 'iOS'):
+        currentPageObjectContext.thisCameraPrivacyPolicyPage = CameraPrivacyPolicyPage(
+            driver)
+        if currentPageObjectContext.thisCameraPrivacyPolicyPage.on_this_page():
+            currentPageObjectContext.thisCameraPrivacyPolicyPage.select_allow()
     
     # It is possible that the QR code scan page could have an error displayed like invalid QR code, or at times displays
     # no message and just sits there waiting, like there is no qr code to scan. Check to see if there is an error message and if so,
     # close the scan window and scan again.
-    if hasattr(context, 'thisQRCodeScanPage') == False:
-        context.thisQRCodeScanPage = ScanPage(context.driver)
-    if context.thisQRCodeScanPage.on_this_page():
+    if hasattr(currentPageObjectContext, 'thisQRCodeScanPage') == False:
+        currentPageObjectContext.thisQRCodeScanPage = ScanPage(driver)
+    if currentPageObjectContext.thisQRCodeScanPage.on_this_page():
         sleep(5)
-        if "Invalid QR code" in context.thisQRCodeScanPage.get_page_source():
+        if "Invalid QR code" in currentPageObjectContext.thisQRCodeScanPage.get_page_source():
             # log the issue and close the scan window and scan again
             logging.info("Invalid QR code error on scan page, closing and scanning again")
         else:
             # we are on the page but no error yet check one more time then close and scan again
             logging.info("There seems to be a problem scanning the QR Code, closing and scanning again")
-        if context.thisQRCodeScanPage.on_this_page():
-            context.thisQRCodeScanPage.select_close()
-            context.thisConnectingPage = context.thisNavBar.select_scan()
+        if currentPageObjectContext.thisQRCodeScanPage.on_this_page():
+            currentPageObjectContext.thisQRCodeScanPage.select_close()
+            currentPageObjectContext.thisConnectingPage = context.thisNavBar.select_scan()
 
 
 @given('the user has a connectionless {proof} request for access to PCTF')

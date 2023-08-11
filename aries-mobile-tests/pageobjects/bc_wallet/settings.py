@@ -7,6 +7,7 @@ from pageobjects.basepage import BasePage
 from pageobjects.basepage import WaitCondition
 from pageobjects.bc_wallet.developer_settings import DeveloperSettingsPage
 from pageobjects.bc_wallet.contacts import ContactsPage
+from pageobjects.bc_wallet.choose_a_proof_request import ChooseAProofRequestPage
 
 
 class SettingsPage(BasePage):
@@ -21,6 +22,7 @@ class SettingsPage(BasePage):
     intro_aid_locator = (AppiumBy.ACCESSIBILITY_ID, "Introduction to the app")
     intro_locator = (AppiumBy.ID, "com.ariesbifold:id/IntroductionToTheApp")
     developer_locator = (AppiumBy.ID, "com.ariesbifold:id/DeveloperOptions")
+    send_a_proof_request_locator = (AppiumBy.ID, "com.ariesbifold:id/SendAProofRequest")
 
 
     def on_this_page(self):     
@@ -102,6 +104,15 @@ class SettingsPage(BasePage):
             return ConnectingPage(self.driver)
         else:
             raise Exception(f"App not on the {type(self)} page") 
+
+    def select_send_a_proof_request(self):
+        if self.on_this_page():
+            self.find_by(self.send_a_proof_request_locator).click()
+
+            # return a new page object? The scan page.
+            return ChooseAProofRequestPage(self.driver)
+        else:
+            raise Exception(f"App not on the {type(self)} page")
 
 
     def select_credentials(self):

@@ -5,6 +5,7 @@ import json
 import io
 from qrcode import QRCode
 from PIL import Image
+from collections import defaultdict
 
 def get_qr_code_from_invitation(invitation_json, print_qr_code=False, save_qr_code=False, qr_code_border=40):
     if "invitation_url" in invitation_json:
@@ -174,3 +175,34 @@ def table_to_str(table):
             result += cell + '|'
         result += '\n'
     return result
+
+def set_current_page_object_context(context, user=None):
+    if user:
+        return context.multi_device_page_objects[user]
+    else:
+        return context
+    
+# Custom dictionary class with nested attribute-style access
+# class NestedAttributeDict(dict):
+#     def __getattr__(self, attr):
+#         if attr in self:
+#             return self[attr]
+#         else:
+#             sub_dict = NestedAttributeDict()
+#             self[attr] = sub_dict
+#             return sub_dict
+
+#     def __getitem__(self, item):
+#         if item in self:
+#             return self[item]
+#         else:
+#             sub_dict = NestedAttributeDict()
+#             self[item] = sub_dict
+#             return sub_dict
+        
+class NestedAttributeDict(defaultdict):
+    def __init__(self):
+        super().__init__(NestedAttributeDict)
+        
+    def __getattr__(self, attr):
+        return self[attr]

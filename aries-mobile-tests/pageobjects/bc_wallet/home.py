@@ -115,7 +115,7 @@ class HomePage(BasePage):
 
     def select_settings(self):
         if self.on_this_page():
-            self.find_by(self.settings_locator).click()
+            self.find_by(self.settings_locator, wait_condition=WaitCondition.ELEMENT_TO_BE_CLICKABLE).click()
 
             # return a new page object for the settings page
             return SettingsPage(self.driver)
