@@ -308,6 +308,13 @@ def setup_verifier(context, verifier_name, device_handler="new"):
         And the "{verifier_name}" has selected not to use biometrics to unlock BC Wallet
     ''')
 
+@step('a verifier wallet user wants to do a proof request')
+def step_impl(context):
+    context.execute_steps(f'''
+        Given the user has setup thier wallet
+        And the user has selected not to use biometrics to unlock BC Wallet
+        Given the user has use Verifier capability turned on in dev options
+    ''')
 
 @step('the "{holder}" has credentials and the "{verifier}" wants to prove that the holder {proof_name}')
 def step_the_user_has_a_credential(context, holder, verifier, proof_name):
@@ -348,7 +355,20 @@ def given_verifier_proof(context, proof_name, user):
         And the "{user}" has selected to use the {proof_name} proof
     ''')
 
-@given('the "{user}" has user Verifier capability turned on in dev options')
+
+@given('the user has use Verifier capability turned on in dev options')
+def step_turn_on_verifier_capability(context):
+    context.thisSettingsPage = context.thisHomePage.select_settings()
+    context.thisSettingsPage.enable_developer_mode()
+    context.thisDeveloperSettingsPage = context.thisSettingsPage.select_developer()
+    context.thisDeveloperSettingsPage.select_use_verifier_capability()
+    context.thisSettingsPage = context.thisDeveloperSettingsPage.select_back()
+    context.thisSettingsPage.select_back()
+    if context.thisHomePage.welcome_to_bc_wallet_modal.is_displayed():
+        context.thisHomePage.welcome_to_bc_wallet_modal.select_dismiss()
+    assert context.thisHomePage.on_this_page()
+
+@given('the "{user}" has use Verifier capability turned on in dev options')
 def step_turn_on_verifier_capability(context, user):
     currentPageObjectContext = set_current_page_object_context(context, user)
 

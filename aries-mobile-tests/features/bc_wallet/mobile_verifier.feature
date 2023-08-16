@@ -10,8 +10,8 @@ Feature: Mobile Verifier
    Scenario Outline: A wallet user wants to verify someones credential through the wallet they are not connected to
       Given "2" wallet users
          | role     | device   | device_handler |
-         | holder   | default  | new       |
-         | verifier | <device> | existing            |
+         | holder   | default  | new            |
+         | verifier | <device> | existing       |
       And the "holder" has credentials and the "verifier" wants to prove that the holder <proof_name>
          | issuer_agent_type | credential_name   | credential                  | revokable |
          | CANdyUVPIssuer    | Unverified Person | cred_data_unverified_person | False     |
@@ -50,6 +50,23 @@ Feature: Mobile Verifier
          | default | Over 19 years of age |
    #| opposite     |
 
+   @T001.2-MobileVerifier @critical @AcceptanceTest @wip
+   Scenario Outline: A wallet user wants to verify someones credential through the wallet they are not connected to
+      Given a verifier wallet user wants to do a proof request
+      And the holder has credentials
+         | issuer_agent_type | credential_name   | credential                  | revocable | holder_agent_type |
+         | CANdyUVPIssuer    | Unverified Person | cred_data_unverified_person | False     | AATHHolder        |
+      When the verifier prove that the holder <proof_name>
+      # And the holder scans the QR Code from the verifier
+      # And the holder receives the proof request
+      # And the holder shares the information
+      # Then the holder is informed that the information sent successfully
+      # And the verifier receives the information
+      # And the verifier reviews details of the information
+
+      Examples:
+         | device  | proof_name           |
+         | default | Over 19 years of age |
 
    @T002-MobileVerifier @critical @AcceptanceTest @wip
    Scenario: A wallet user wants to verify someones credential through the wallet they are connected to

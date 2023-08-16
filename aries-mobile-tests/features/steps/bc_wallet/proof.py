@@ -40,24 +40,29 @@ def step_impl(context):
 @given('that the holder has a revocable credential stored in the wallet')
 @given('the holder has credentials')
 def step_impl(context):
-    # context.execute_steps(f'''
-    #     Given a connection has been successfully made
-    # ''')
 
     for row in context.table:
-        credential = row["credential"]
-        revokable = row["revocable"]
-        credential_name = row["credential_name"]
-        context.execute_steps(f'''
-            Given a connection has been successfully made
-            Given the user has a credential offer of {credential} with revocable set as {revokable}
-            When they select Accept
-            And the holder is informed that their credential is on the way with an indication of loading
-            And once the credential arrives they are informed that the Credential is added to your wallet
-            And they select Done
-            Then they are brought to the list of credentials
-            And the credential {credential_name} is accepted is at the top of the list
-        ''')
+        if "holder_agent_type" in row.headings:
+            if row["holder_agent_type"] == "AATHHolder":
+                # Pass the holder type as a table to the step
+                context.execute_steps(f'''
+                    Given a connection has been successfully made
+                ''')
+                pass
+        else:
+            credential = row["credential"]
+            revokable = row["revocable"]
+            credential_name = row["credential_name"]
+            context.execute_steps(f'''
+                Given a connection has been successfully made
+                Given the user has a credential offer of {credential} with revocable set as {revokable}
+                When they select Accept
+                And the holder is informed that their credential is on the way with an indication of loading
+                And once the credential arrives they are informed that the Credential is added to your wallet
+                And they select Done
+                Then they are brought to the list of credentials
+                And the credential {credential_name} is accepted is at the top of the list
+            ''')
 
 
 @given('the holder has a credential of {credential}')
@@ -380,6 +385,7 @@ def step_impl(context):
 
 @given('the "{user}" has setup thier Wallet')
 @given('the Holder has setup thier Wallet')
+@given('the user has setup thier Wallet')
 def step_impl(context, user=None):
 
     if user:

@@ -163,6 +163,7 @@ def step_impl(context):
 
 @given('the "{user}" has selected not to use biometrics to unlock BC Wallet')
 @given('the Holder has selected not to use biometrics to unlock BC Wallet')
+@given('the user has selected not to use biometrics to unlock BC Wallet')
 def step_impl(context, user=None):
     if user:
         context.execute_steps(f'''
