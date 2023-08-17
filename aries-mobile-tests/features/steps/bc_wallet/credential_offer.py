@@ -3,7 +3,7 @@
 #
 # -----------------------------------------------------------
 
-from behave import given, when, then
+from behave import given, when, then, step
 import json
 from time import sleep
 
@@ -40,7 +40,7 @@ def step_impl(context):
     assert context.thisContactPage.wait_for_credential_offer()
 
 
-@when('the holder opens the credential offer')
+@step('the holder opens the credential offer')
 def step_impl(context):
     # Select the credential offer
     context.thisCredentialOfferPage = context.thisContactPage.select_open_credential_offer()
