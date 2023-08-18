@@ -43,12 +43,13 @@ def step_impl(context):
 
     for row in context.table:
         if "holder_agent_type" in row.headings:
-            if row["holder_agent_type"] == "AATHHolder":
-                # Pass the holder type as a table to the step
-                context.execute_steps(f'''
-                    Given a connection has been successfully made
-                ''')
-                pass
+            # Pass the holder type as a table to the step
+            # This will allow the steps following to determine if we are using a non wallet app holder,
+            # and if so, don't call the wallet app specific page object calls.
+            context.execute_steps(u'''
+                Given a connection has been successfully made
+                {table}
+            '''.format(table=table_to_str(context.table)))
         else:
             credential = row["credential"]
             revokable = row["revocable"]
