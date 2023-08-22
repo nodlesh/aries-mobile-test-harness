@@ -313,7 +313,7 @@ def step_impl(context):
     context.execute_steps(f'''
         Given the user has setup thier wallet
         And the user has selected not to use biometrics to unlock BC Wallet
-        Given the user has use Verifier capability turned on in dev options
+        And the user has use Verifier capability turned on in dev options            
     ''')
 
 @step('the "{holder}" has credentials and the "{verifier}" wants to prove that the holder {proof_name}')

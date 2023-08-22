@@ -5,8 +5,18 @@ import json
 import io
 from qrcode import QRCode
 from PIL import Image
+from pyzbar.pyzbar import decode
 from collections import defaultdict
 
+# This code is responsible for generating a QR code from the invitation url
+# and returning a base64 encoded string of the image.
+
+# get_qr_code_from_invitation
+# invitation_json: json object containing an invitation url
+# print_qr_code: boolean, print the qr code to the console
+# save_qr_code: boolean, save the qr code to a file
+# qr_code_border: int, border size of the qr code
+# returns: base64 encoded string of the qr code image
 def get_qr_code_from_invitation(invitation_json, print_qr_code=False, save_qr_code=False, qr_code_border=40):
     if "invitation_url" in invitation_json:
         invite_url_key = "invitation_url"
@@ -33,6 +43,24 @@ def get_qr_code_from_invitation(invitation_json, print_qr_code=False, save_qr_co
 
     return contents.decode('utf-8')
     
+def get_invite_url_from_qrcode(qrcode_image) -> str:
+    """Extracts the invite url from the qrcode image"""
+    # qr = QRCode()
+    # qr.add_data(qrcode)
+    # qr.make()
+    # return qr.data_list[0].data.decode('utf-8')
+    if isinstance(qrcode_image, str):
+        # Decode base64 and create a PIL image
+        image_data = base64.b64decode(qrcode_image)
+        qrcode_image = Image.open(io.BytesIO(image_data))
+
+    decoded_objects = decode(qrcode_image)
+
+    if decoded_objects:
+        data = decoded_objects[0].data.decode('utf-8')
+        return data
+
+    return ""
 
 def create_non_revoke_interval(timeframe):
     # timeframe containes two variables, the To and from of the non-revoked to and from parameters in the send presentation request message

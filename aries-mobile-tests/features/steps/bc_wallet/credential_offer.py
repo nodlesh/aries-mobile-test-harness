@@ -3,6 +3,7 @@
 #
 # -----------------------------------------------------------
 
+from agent_test_utils import table_to_str
 from behave import given, when, then, step
 import json
 from time import sleep
@@ -19,6 +20,20 @@ from pageobjects.bc_wallet.home import HomePage
 
 @given('a connection has been successfully made')
 def step_impl(context):
+    # Check if the context has a table that contains holder agent type, if so then we need to handle things differently.
+    if hasattr(context, 'table'):
+        # does the table contain the holder agent type?
+        if 'holder_agent_type' in context.table.headings:
+            # Get the holder agent type from the table
+            holder_agent_type = context.table[0]['holder_agent_type']
+            # context.execute_steps('''
+            #     When the Holder scans the QR code sent by the "issuer"
+            #     {table}
+            # '''.format(table=table_to_str(context.table)))
+            context.execute_steps('''
+                When the {holder_agent_type} scans the QR code sent by the "issuer"
+            ''')
+
     context.execute_steps('''
         When the Holder scans the QR code sent by the "issuer"
         And the Holder is taken to the Connecting Screen/modal

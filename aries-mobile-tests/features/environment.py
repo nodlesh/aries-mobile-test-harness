@@ -41,15 +41,29 @@ def before_feature(context, feature):
     context.device_service_handler = device_service_handler
 
     # Get the issuer endpoint and the issuer type and create an issuer interface from the agent factory
+    # Issuer is required for all tests
     issuer_info = context.config.userdata.get("Issuer").split(";")
     issuer_type = issuer_info[0]
     issuer_endpoint = issuer_info[1]
-    verifier_info = context.config.userdata.get("Verifier").split(";")
-    verifier_type = verifier_info[0]
-    verifier_endpoint = verifier_info[1]
+
     aif = AgentInterfaceFactory()
+
+    # if userdata.get contains Verifier then setup verifier info
+    if context.config.userdata.get("Verifier"):
+        verifier_info = context.config.userdata.get("Verifier").split(";")
+        verifier_type = verifier_info[0]
+        verifier_endpoint = verifier_info[1]
+        context.verifier = aif.create_verifier_agent_interface(verifier_type, verifier_endpoint)
+
+    # if userdata.get contains Holder then setup holder info.
+    # This means we are using an external Holder and not the Holder app under test(AUT). The AUT is probably acting as a verifier
+    if context.config.userdata.get("Holder"):
+        holder_info = context.config.userdata.get("Holder").split(";")
+        holder_type = holder_info[0]
+        holder_endpoint = holder_info[1]
+        context.holder = aif.create_holder_agent_interface(holder_type, holder_endpoint)
+
     context.issuer = aif.create_issuer_agent_interface(issuer_type, issuer_endpoint)
-    context.verifier = aif.create_verifier_agent_interface(verifier_type, verifier_endpoint)
     context.print_page_source_on_failure = eval(context.config.userdata['print_page_source_on_failure'])
     context.print_qr_code_on_creation = eval(context.config.userdata['print_qr_code_on_creation'])
     context.save_qr_code_on_creation = True if device_cloud_service == 'LocalAndroid' or device_cloud_service == 'LambdaTest' else eval(context.config.userdata['save_qr_code_on_creation'])
