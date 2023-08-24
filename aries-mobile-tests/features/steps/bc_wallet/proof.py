@@ -40,20 +40,39 @@ def step_impl(context):
 @given('that the holder has a revocable credential stored in the wallet')
 @given('the holder has credentials')
 def step_impl(context):
-
+    
     for row in context.table:
+        if "issuer_agent_type" in row.headings:
+            issuer_agent_type = row["issuer_agent_type"]
+        credential = row["credential"]
+        revokable = row["revocable"]
+        credential_name = row["credential_name"]
+
         if "holder_agent_type" in row.headings:
+            holder_agent_type = row["holder_agent_type"]
             # Pass the holder type as a table to the step
             # This will allow the steps following to determine if we are using a non wallet app holder,
             # and if so, don't call the wallet app specific page object calls.
-            context.execute_steps(u'''
-                Given a connection has been successfully made
-                {table}
-            '''.format(table=table_to_str(context.table)))
+            if issuer_agent_type and issuer_agent_type == "AATHIssuer":
+                context.execute_steps(u'''
+                    Given a connection has been successfully made
+                    {table}
+                '''.format(table=table_to_str(context.table)))
+                context.execute_steps(f'''
+                    Given the user has a credential offer of {credential} with revocable set as {revokable}
+                ''')
+            else:
+                context.execute_steps(f'''
+                    Given the {holder_agent_type} receives a credential offer of {credential}
+                ''')
+                context.execute_steps(u'''
+                    Given they Scan the credential offer QR Code
+                    {table}
+                    And the Connecting completes successfully
+                '''.format(table=table_to_str(context.table)))
+
+
         else:
-            credential = row["credential"]
-            revokable = row["revocable"]
-            credential_name = row["credential_name"]
             context.execute_steps(f'''
                 Given a connection has been successfully made
                 Given the user has a credential offer of {credential} with revocable set as {revokable}
@@ -449,40 +468,40 @@ def step_impl(context, credential, user=None):
 @given('the "{user}" Scans the credential offer QR Code')
 @given('they Scan the credential offer QR Code')
 def step_impl(context, user=None):
-    currentPageObjectContext = set_current_page_object_context(context, user)
-    if user:
-        driver = context.multi_device_service_handlers[user]._driver
+    if context.table:
+        for row in context.table:
+            if "holder_agent_type" in row.headings:
+                context.holder.accept_invitation(context.last_generated_qr_code)
     else:
-        driver = context.driver
 
-    if hasattr(currentPageObjectContext, 'thisNavBar') == False:
-        currentPageObjectContext.thisNavBar = NavBar(driver)
-    currentPageObjectContext.thisConnectingPage = currentPageObjectContext.thisNavBar.select_scan()
+        if hasattr(context, 'thisNavBar') == False:
+            context.thisNavBar = NavBar(context.driver)
+        context.thisConnectingPage = context.thisNavBar.select_scan()
 
-    # If this is the first time the user selects scan, then they will get a Camera Privacy Policy that needs to be dismissed
-    # if autoGrantPermissions is in Capabilities = True, and platform is Android, skip this
-    if ('autoGrantPermissions' in driver.capabilities and driver.capabilities['autoGrantPermissions'] == False) or (driver.capabilities['platformName'] == 'iOS'):
-        currentPageObjectContext.thisCameraPrivacyPolicyPage = CameraPrivacyPolicyPage(
-            driver)
-        if currentPageObjectContext.thisCameraPrivacyPolicyPage.on_this_page():
-            currentPageObjectContext.thisCameraPrivacyPolicyPage.select_allow()
-    
-    # It is possible that the QR code scan page could have an error displayed like invalid QR code, or at times displays
-    # no message and just sits there waiting, like there is no qr code to scan. Check to see if there is an error message and if so,
-    # close the scan window and scan again.
-    if hasattr(currentPageObjectContext, 'thisQRCodeScanPage') == False:
-        currentPageObjectContext.thisQRCodeScanPage = ScanPage(driver)
-    if currentPageObjectContext.thisQRCodeScanPage.on_this_page():
-        sleep(5)
-        if "Invalid QR code" in currentPageObjectContext.thisQRCodeScanPage.get_page_source():
-            # log the issue and close the scan window and scan again
-            logging.info("Invalid QR code error on scan page, closing and scanning again")
-        else:
-            # we are on the page but no error yet check one more time then close and scan again
-            logging.info("There seems to be a problem scanning the QR Code, closing and scanning again")
-        if currentPageObjectContext.thisQRCodeScanPage.on_this_page():
-            currentPageObjectContext.thisQRCodeScanPage.select_close()
-            currentPageObjectContext.thisConnectingPage = context.thisNavBar.select_scan()
+        # If this is the first time the user selects scan, then they will get a Camera Privacy Policy that needs to be dismissed
+        # if autoGrantPermissions is in Capabilities = True, and platform is Android, skip this
+        if ('autoGrantPermissions' in context.driver.capabilities and context.driver.capabilities['autoGrantPermissions'] == False) or (context.driver.capabilities['platformName'] == 'iOS'):
+            context.thisCameraPrivacyPolicyPage = CameraPrivacyPolicyPage(
+                context.driver)
+            if context.thisCameraPrivacyPolicyPage.on_this_page():
+                context.thisCameraPrivacyPolicyPage.select_allow()
+        
+        # It is possible that the QR code scan page could have an error displayed like invalid QR code, or at times displays
+        # no message and just sits there waiting, like there is no qr code to scan. Check to see if there is an error message and if so,
+        # close the scan window and scan again.
+        if hasattr(context, 'thisQRCodeScanPage') == False:
+            context.thisQRCodeScanPage = ScanPage(context.driver)
+        if context.thisQRCodeScanPage.on_this_page():
+            sleep(5)
+            if "Invalid QR code" in context.thisQRCodeScanPage.get_page_source():
+                # log the issue and close the scan window and scan again
+                logging.info("Invalid QR code error on scan page, closing and scanning again")
+            else:
+                # we are on the page but no error yet check one more time then close and scan again
+                logging.info("There seems to be a problem scanning the QR Code, closing and scanning again")
+            if context.thisQRCodeScanPage.on_this_page():
+                context.thisQRCodeScanPage.select_close()
+                context.thisConnectingPage = context.thisNavBar.select_scan()
 
 
 @given('the user has a connectionless {proof} request for access to PCTF')

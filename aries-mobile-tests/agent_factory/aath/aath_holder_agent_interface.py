@@ -6,6 +6,8 @@ Class for actual AATH holder agent
 from agent_factory.holder_agent_interface import HolderAgentInterface
 from agent_factory.aath.aath_agent_interface import AATHAgentInterface
 import json
+import base64
+import urllib.parse
 from agent_test_utils import get_qr_code_from_invitation, get_invite_url_from_qrcode
 from agent_controller_client import agent_controller_GET, agent_controller_POST, expected_agent_state, setup_already_connected
 from random import randint
@@ -36,11 +38,24 @@ class AATHHolderAgentInterface(HolderAgentInterface, AATHAgentInterface):
         if invite_url is None:
             raise Exception("No invite url or QR code provided")
 
+        #data = {"serviceEndpoint": invite_url}
+        # data will equal the decoded base64 invite url. Everything in the Url past the ?c_i= will be the data after decode.
+        # Parse the URL to extract the query parameters
+        url_parts = urllib.parse.urlparse(invite_url)
+        query_params = urllib.parse.parse_qs(url_parts.query)
+        encoded_data = query_params.get('c_i', [''])[0]
+
+        # Decoding the Base64 URL encoded data
+        decoded_data = base64.urlsafe_b64decode(encoded_data + '=' * (4 - len(encoded_data) % 4))
+
+        # Convert bytes to string
+        data = decoded_data.decode('utf-8')
+
         (resp_status, resp_text) = agent_controller_POST(
             self.endpoint + "/agent/command/",
-            "out-of-band",
+            "connection",
             operation="receive-invitation",
-            data=invite_url,
+            data=data,
         )
         if resp_status != 200:
             raise Exception(

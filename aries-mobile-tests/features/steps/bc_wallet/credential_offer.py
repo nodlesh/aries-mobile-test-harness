@@ -21,7 +21,7 @@ from pageobjects.bc_wallet.home import HomePage
 @given('a connection has been successfully made')
 def step_impl(context):
     # Check if the context has a table that contains holder agent type, if so then we need to handle things differently.
-    if hasattr(context, 'table'):
+    if hasattr(context.table, 'headings'):
         # does the table contain the holder agent type?
         if 'holder_agent_type' in context.table.headings:
             # Get the holder agent type from the table
@@ -33,13 +33,13 @@ def step_impl(context):
             context.execute_steps('''
                 When the {holder_agent_type} scans the QR code sent by the "issuer"
             ''')
-
-    context.execute_steps('''
-        When the Holder scans the QR code sent by the "issuer"
-        And the Holder is taken to the Connecting Screen/modal
-        And the Connecting completes successfully
-        Then there is a connection between "issuer" and Holder
-    ''')
+        else:
+            context.execute_steps('''
+                When the Holder scans the QR code sent by the "issuer"
+                And the Holder is taken to the Connecting Screen/modal
+                And the Connecting completes successfully
+                Then there is a connection between "issuer" and Holder
+            ''')
 
 
 @when('the Holder receives a Non-Revocable credential offer')
@@ -107,7 +107,11 @@ def step_impl(context, credential, revocation=None, user=None):
                 qrimage = context.issuer.send_credential(
                     credential_offer=credential_json)
                 if user:
-                    context.multi_device_service_handlers[user].inject_qrcode(qrimage)
+                    if user == "AATHHolder":
+                        # save the qr code to the test context for later step use.
+                        context.last_generated_qr_code = qrimage
+                    else:
+                        context.multi_device_service_handlers[user].inject_qrcode(qrimage)
                 else:
                     context.device_service_handler.inject_qrcode(qrimage)
             else:
