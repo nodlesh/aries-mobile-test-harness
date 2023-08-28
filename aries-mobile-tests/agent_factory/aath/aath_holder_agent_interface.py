@@ -3,6 +3,7 @@ Class for actual AATH holder agent
 """
 
 
+import logging
 from agent_factory.holder_agent_interface import HolderAgentInterface
 from agent_factory.aath.aath_agent_interface import AATHAgentInterface
 import json
@@ -31,6 +32,8 @@ class AATHHolderAgentInterface(HolderAgentInterface, AATHAgentInterface):
 
     def accept_invitation(self, qrcode: str = None, invite_url: str = None):
         """Accept an invitation from an issuer or verifier in the format of a QR code or a URL"""
+        logger = logging.getLogger(__name__)
+        
         # if a qrcode then decode the qrcode to get the invitation url
         if qrcode is not None:
             invite_url = get_invite_url_from_qrcode(qrcode)
@@ -50,6 +53,9 @@ class AATHHolderAgentInterface(HolderAgentInterface, AATHAgentInterface):
 
         # Convert bytes to string
         data = decoded_data.decode('utf-8')
+
+        # print debug info
+        logger.debug(f"Invitation data passed to holder receive-invitation: {json.dumps(data, indent=4)}")
 
         (resp_status, resp_text) = agent_controller_POST(
             self.endpoint + "/agent/command/",
