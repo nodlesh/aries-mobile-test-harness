@@ -60,6 +60,7 @@ def step_impl(context):
     # Select the credential offer
     context.thisCredentialOfferPage = context.thisContactPage.select_open_credential_offer()
 
+
 @given('the "{user}" receives a credential offer of {credential}')
 @given('the Holder receives a credential offer of {credential}')
 @when('the Holder receives a credential offer of {credential}')

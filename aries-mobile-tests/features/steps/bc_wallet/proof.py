@@ -63,7 +63,7 @@ def step_impl(context):
                 ''')
             else:
                 context.execute_steps(f'''
-                    Given the {holder_agent_type} receives a credential offer of {credential}
+                    Given the "{holder_agent_type}" receives a credential offer of {credential}
                 ''')
                 context.execute_steps(u'''
                     Given they Scan the credential offer QR Code
