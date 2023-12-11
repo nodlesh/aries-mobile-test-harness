@@ -17,7 +17,7 @@ class AATHAgentInterface():
         """create an invitation and return the json back to the caller """
         self._oob = oob
         if self._oob is True:
-            data = {"use_public_did": False}
+            data = {"use_public_did": True}
             (resp_status, resp_text) = agent_controller_POST(
                 self.endpoint + "/agent/command/",
                 "out-of-band",

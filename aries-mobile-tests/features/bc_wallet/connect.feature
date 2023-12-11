@@ -170,3 +170,19 @@ Feature: Connections
    # Messaging/Chat currently not implemented/turned off in BC Wallet
    @T005.10-Connect @RemoveContact @trivial @ExceptionTest @Story_231 @wip
    Scenario: Messaging/Chat after contact removal
+
+
+   @T006-Connect @normal @DerivedTest @OOB @ConnectionReuse @wip
+   Scenario: Wallet User connects to the same issuer twice and only has one connection
+      Given an existing wallet user
+         | pin    | biometrics |
+         | 369369 | off        |
+      When the Holder scans the QR code sent by the "issuer"
+      And the Holder is taken to the Connecting Screen/modal
+      And the Connecting completes successfully
+      And there is a connection between "issuer" and Holder
+      And the Holder scans the QR code sent by the "issuer"
+      And the Holder is taken to the Connecting Screen/modal
+      And the Connecting completes successfully
+      And there is a connection between "issuer" and Holder
+      Then there is only one contact for the "issuer"

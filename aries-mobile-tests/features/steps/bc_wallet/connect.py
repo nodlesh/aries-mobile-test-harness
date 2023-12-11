@@ -5,7 +5,7 @@
 
 from pageobjects.bc_wallet.scan import ScanPage
 from pageobjects.bc_wallet.navbar import NavBar
-from behave import given, when, then
+from behave import given, when, then, step
 import json
 from time import sleep
 import logging
@@ -46,7 +46,11 @@ def step_impl(context, agent):
         qr_code_border = 40
 
     if agent == "issuer":
-        qrimage = context.issuer.create_invitation(print_qrcode=context.print_qr_code_on_creation, save_qrcode=context.save_qr_code_on_creation, qr_code_border=qr_code_border)
+        # if OOB is in the scenario tags then create an OOB invitation
+        if "OOB" in context.scenario.tags:
+            qrimage = context.issuer.create_invitation(oob=True, print_qrcode=context.print_qr_code_on_creation, save_qrcode=context.save_qr_code_on_creation, qr_code_border=qr_code_border)
+        else:
+            qrimage = context.issuer.create_invitation(print_qrcode=context.print_qr_code_on_creation, save_qrcode=context.save_qr_code_on_creation, qr_code_border=qr_code_border)
     elif agent == "verifier":
         qrimage = context.verifier.create_invitation(print_qrcode=context.print_qr_code_on_creation, save_qrcode=context.save_qr_code_on_creation, qr_code_border=qr_code_border)
     else:
@@ -138,7 +142,7 @@ def step_impl(context):
     context.thisContactPage = ContactPage(context.driver)
 
 
-@then('there is a connection between "{agent}" and Holder')
+@step('there is a connection between "{agent}" and Holder')
 def step_impl(context, agent):
     # Check the contacts for a new connection
 
@@ -153,6 +157,14 @@ def step_impl(context, agent):
     assert context.thisContactPage.on_this_page()
     
     
+@then('there is only one contact for the "{agent}"')
+def step_impl(context, agent):
+    # Check the contacts for a new connection
+    context.thisSettingsPage = context.thisHomePage.select_settings()
+    context.thisContactsPage = context.thisSettingsPage.select_contacts()
+    if agent == "issuer":
+        assert len(context.thisContactsPage.get_contact_list()) == 1
+
 
 @given('the holder is connected to an Issuer')
 def step_impl(context):
